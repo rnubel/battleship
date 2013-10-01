@@ -23,6 +23,29 @@ type Board struct {
 	ships  []Ship
 }
 
+type GameState int
+
+const (
+  NOTSTARTED GameState = iota
+  PLACEMENT
+  BATTLE    // um, some go magic makes this work
+  FINISHED
+)
+
+type Player struct {
+  Identifier string
+}
+
+type Game struct {
+  Board1    *Board
+  Board2    *Board
+  Player1   Player
+  Player2   Player
+
+  State         GameState
+  CurrentPlayer Player
+}
+
 func (s *Ship) covers(x, y int) bool {
   for i := range(s.parts) {
     if s.parts[i].loc.x == x && s.parts[i].loc.y == y {
@@ -65,7 +88,23 @@ func (b *Board) recordMiss(x, y int) {
 	b.misses = append(b.misses, c)
 }
 
+func (g *Game) endTurn() {
+  if g.CurrentPlayer == g.Player1 {
+    g.CurrentPlayer = g.Player2
+  } else {
+    g.CurrentPlayer = g.Player1
+  }
+}
+
+
 // Public API follows.
+
+func CreateGame(width, height int, p1, p2 Player) Game {
+  b1, b2 := Board{Width: width, Height: height}, Board{Width: width, Height: height}
+  g := Game{Board1: &b1, Board2: &b2, Player1: p1, Player2: p2, State: NOTSTARTED, CurrentPlayer: p1}
+
+  return g
+}
 
 func (b *Board) RecordShot(x, y int) (hit bool, err string) {
 	if x < 0 || y < 0 || x >= b.Width || y >= b.Height {
@@ -150,4 +189,9 @@ func (b *Board) IsLost() (lost bool) {
   }
 
   return
+}
+
+func (g *Game) Start() {
+  g.CurrentPlayer = g.Player1
+  g.State = PLACEMENT
 }
