@@ -190,5 +190,35 @@ func TestPhaseTransitions(t *testing.T) {
   if g.Phase != FINISHED {
     t.Error("Phase did not change to FINISHED when player 1 won")
   }
+}
 
+func TestSalvos(t *testing.T) {
+  p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
+  g := CreateGame(10, 10, p1, p2)
+  g.ShipAllocation = []int{1,2,3,4,5}
+  g.SalvoAllocation = map[int]int{1:1, 2:2, 3:3, 4:10, 5:50}
+  g.Start()
+
+  if g.ShotsPlayerCanFire(p1) != 0 {
+    t.Error("A player with zero ships left can fire more than zero shots")
+  }
+
+  placement := Placement{loc: Coord{x: 0, y: 0}, size: 1, horizontal: true}
+  turn1 := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+  g.SubmitTurn(turn1)
+
+  if g.ShotsPlayerCanFire(p1) != 1 {
+    t.Error("A player with one 1-ship is not allocated one shot")
+  }
+
+  // bypass player 2's turn
+  g.endTurn()
+
+  placement = Placement{loc: Coord{x: 2, y: 2}, size: 4, horizontal: true}
+  turn2 := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+  g.SubmitTurn(turn2)
+
+  if g.ShotsPlayerCanFire(p1) != 11 {
+    t.Error("A player with one 1-ship and one 4-ship (worth 10 shots) is not allocated 11 shots")
+  }
 }
