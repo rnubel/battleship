@@ -212,7 +212,7 @@ func TestSalvos(t *testing.T) {
   }
 
   // bypass player 2's turn
-  g.endTurn()
+  g.CurrentPlayer = p1
 
   placement = Placement{loc: Coord{x: 2, y: 2}, size: 4, horizontal: true}
   turn2 := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
@@ -220,5 +220,17 @@ func TestSalvos(t *testing.T) {
 
   if g.ShotsPlayerCanFire(p1) != 11 {
     t.Error("A player with one 1-ship and one 4-ship (worth 10 shots) is not allocated 11 shots")
+  }
+
+  // move straight to firing
+  g.Phase = BATTLE
+  g.CurrentPlayer = p1
+
+  c := Coord{x:0,y:0}
+  turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: Salvo{locs: []Coord{c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c}}}
+  ok, err := g.SubmitTurn(turn3)
+
+  if ok || err != "too_many_shots__max_is_11" {
+    t.Errorf("The correct error was not raised (instead, we got \"%s\") when a player tried to fire too many shots", err)
   }
 }
