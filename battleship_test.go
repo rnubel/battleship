@@ -86,8 +86,8 @@ func TestCreateGame(t *testing.T) {
     t.Error("Game was not set up with two boards and correct players")
   }
 
-  if g.State != NOTSTARTED {
-    t.Error("Game is not in correct state (NOTSTARTED)")
+  if g.Phase != NOTSTARTED {
+    t.Error("Game is not in correct phase (NOTSTARTED)")
   }
 }
 
@@ -112,7 +112,83 @@ func TestPlacement(t *testing.T) {
   g := CreateGame(10, 10, p1, p2)
   g.Start()
 
-  if g.State != PLACEMENT {
-    t.Error("Game is not in the PLACEMENT state")
+  if g.Phase != PLACEMENT {
+    t.Error("Game is not in the PLACEMENT phase")
   }
+
+  loc := Coord{x: 0, y: 0}
+  placement := Placement{loc: loc, size: 4, horizontal: true}
+  turn := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+
+  result := g.executeTurn(turn)
+
+  if !result.Ok || result.Error != "" {
+    t.Error("Result was not as expected")
+  }
+
+  if len(g.Board1.ships) != 1 {
+    t.Error("Turn did not actually place a ship")
+  }
+}
+
+func TestPlacementLimits(t *testing.T) {
+  p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
+  g := CreateGame(10, 10, p1, p2)
+  g.ShipAllocation = []int{1}
+  g.Start()
+
+  loc := Coord{x: 0, y: 0}
+  placement := Placement{loc: loc, size: 6, horizontal: true} // no size 6 ships should be allowed
+  turn := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+
+  result := g.executeTurn(turn)
+
+  if result.Ok || result.Error != "cannot_place_ship_of_that_size" {
+    t.Error("Invalid placement was not rejected properly")
+  }
+
+  loc = Coord{x: 0, y: 0}
+  placement = Placement{loc: loc, size: 1, horizontal: true}
+  turn = Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+
+  result = g.executeTurn(turn)
+
+  if !result.Ok {
+    t.Error("Valid placement was rejected")
+  }
+
+  result = g.executeTurn(turn)
+
+  if result.Ok || result.Error != "cannot_place_ship_of_that_size" {
+    t.Error("Duplicate placement was not rejected")
+  }
+}
+
+func TestPhaseTransitions(t *testing.T) {
+  p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
+  g := CreateGame(10, 10, p1, p2)
+  g.ShipAllocation = []int{1}
+  g.Start()
+
+  loc := Coord{x: 0, y: 0}
+  placement := Placement{loc: loc, size: 1, horizontal: true}
+  turn1 := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+  g.SubmitTurn(turn1)
+
+  turn2 := Turn{Player: p2, TurnType: PLACEMENT_TURN, Placement: placement}
+  g.SubmitTurn(turn2)
+
+  if g.Phase != BATTLE {
+    t.Error("Phase did not change to BATTLE once both players had placed all available ships")
+  }
+
+  // Now, have player1 win it.
+  salvo := Salvo{locs: []Coord{loc}}
+  turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: salvo}
+  g.SubmitTurn(turn3)
+
+  if g.Phase != FINISHED {
+    t.Error("Phase did not change to FINISHED when player 1 won")
+  }
+
 }
