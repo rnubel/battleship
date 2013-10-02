@@ -71,6 +71,7 @@ type Game struct {
   Player2   Player
 
   ShipAllocation  []int
+  SalvoAllocation map[int]int // ship size -> shots to fire
   Phase           GamePhase
   CurrentPlayer   Player
   Turns           []Turn
@@ -172,19 +173,24 @@ func (g *Game) endTurn() {
   }
 }
 
-func (g *Game) executeTurn(t Turn) (r Result) {
-  if t.Player != g.CurrentPlayer {
-    return Result{Ok: false, Error: "not_your_turn"}
-  }
-
-  var myBoard, theirBoard *Board
-  if t.Player == g.Player1 {
+func (g *Game) boardsForPlayer(p Player) (myBoard, theirBoard *Board) {
+  if p == g.Player1 {
     myBoard     = g.Board1
     theirBoard  = g.Board2
   } else {
     myBoard     = g.Board2
     theirBoard  = g.Board1
   }
+
+  return
+}
+
+func (g *Game) executeTurn(t Turn) (r Result) {
+  if t.Player != g.CurrentPlayer {
+    return Result{Ok: false, Error: "not_your_turn"}
+  }
+
+  myBoard, theirBoard := g.boardsForPlayer(t.Player)
 
   switch t.TurnType {
   case PLACEMENT_TURN:
@@ -230,7 +236,15 @@ func (g *Game) executeTurn(t Turn) (r Result) {
 func CreateGame(width, height int, p1, p2 Player) Game {
   b1, b2 := Board{Width: width, Height: height}, Board{Width: width, Height: height}
   ships := []int{2,3,3,4,5} // allocated ship sizes
-  g := Game{Board1: &b1, Board2: &b2, Player1: p1, Player2: p2, Phase: NOTSTARTED, CurrentPlayer: p1, ShipAllocation: ships}
+  shots := map[int]int{1:1, 2:1, 3:1, 4:1, 5:1} // no variance here; just one shot per ship.
+  g := Game{Board1: &b1,
+            Board2: &b2,
+            Player1: p1,
+            Player2: p2,
+            Phase: NOTSTARTED,
+            CurrentPlayer: p1,
+            ShipAllocation: ships,
+            SalvoAllocation: shots}
 
   return g
 }
@@ -338,4 +352,14 @@ func (g *Game) SubmitTurn(t Turn) (ok bool, err string) {
   } else {
     return false, result.Error
   }
+}
+
+func (g *Game) ShotsPlayerCanFire(p Player) (shots int) {
+  myBoard, _ := g.boardsForPlayer(p)
+
+  for i := range(myBoard.ships) {
+    shots += g.SalvoAllocation[myBoard.ships[i].Size()]
+  }
+
+  return
 }
