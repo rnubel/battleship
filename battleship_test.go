@@ -183,7 +183,7 @@ func TestPhaseTransitions(t *testing.T) {
   }
 
   // Now, have player1 win it.
-  salvo := Salvo{locs: []Coord{loc}}
+  salvo := Salvo{Locs: []Coord{loc}}
   turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: salvo}
   g.SubmitTurn(turn3)
 
@@ -227,7 +227,7 @@ func TestSalvos(t *testing.T) {
   g.CurrentPlayer = p1
 
   c := Coord{x:0,y:0}
-  turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: Salvo{locs: []Coord{c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c}}}
+  turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: Salvo{Locs: []Coord{c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c}}}
   ok, err := g.SubmitTurn(turn3)
 
   if ok || err != "too_many_shots__max_is_11" {

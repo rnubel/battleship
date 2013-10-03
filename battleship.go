@@ -1,5 +1,7 @@
 package battleship
 
+import "fmt"
+
 type Coord struct {
 	x int
 	y int
@@ -42,7 +44,7 @@ type Placement struct {
 }
 
 type Salvo struct {
-  locs        []Coord
+  Locs        []Coord
 }
 
 type TurnType int
@@ -194,6 +196,10 @@ func (g *Game) executeTurn(t Turn) (r Result) {
 
   switch t.TurnType {
   case PLACEMENT_TURN:
+    if g.Phase != PLACEMENT {
+      return Result{Ok: false, Error: "not_placement_phase"}
+    }
+
     p := t.Placement
     if !g.canPlace(myBoard, p.size) {
       return Result{Ok: false, Error: "cannot_place_ship_of_that_size"}
@@ -207,9 +213,17 @@ func (g *Game) executeTurn(t Turn) (r Result) {
 
     return Result{Ok: ok, Error: err}
   case SALVO_TURN:
+    if g.Phase != BATTLE {
+      return Result{Ok: false, Error: "not_battle_phase"}
+    }
+
+    if len(t.Salvo.Locs) > g.ShotsPlayerCanFire(t.Player) {
+      return Result{Ok: false, Error: fmt.Sprintf("too_many_shots__max_is_%d", g.ShotsPlayerCanFire(t.Player))}
+    }
+
     s, ok := t.Salvo, true
-    for i := range(s.locs) {
-      ok = ok && theirBoard.IsValidShot(s.locs[i].x, s.locs[i].y)
+    for i := range(s.Locs) {
+      ok = ok && theirBoard.IsValidShot(s.Locs[i].x, s.Locs[i].y)
     }
 
     if !ok {
@@ -217,9 +231,9 @@ func (g *Game) executeTurn(t Turn) (r Result) {
     }
 
     hits := 0
-    for i := range(s.locs) {
+    for i := range(s.Locs) {
       // without a transaction, too late to handle errors.
-      hit, _ := theirBoard.RecordShot(s.locs[i].x, s.locs[i].y)
+      hit, _ := theirBoard.RecordShot(s.Locs[i].x, s.Locs[i].y)
       if hit {
         hits++
       }
