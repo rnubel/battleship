@@ -333,6 +333,10 @@ func (b *Board) PlaceShip(x, y, size int, horizontal bool) (ok bool, err string)
       loc.y += i
     }
 
+    if b.ShipAt(loc.x, loc.y) {
+      return false, "collides_with_other_ship"
+    }
+
     part := ShipPart{loc: loc, isHit: false}
     s.parts = append(s.parts, part)
   }
@@ -357,15 +361,32 @@ func (g *Game) Start() {
   g.Phase = PLACEMENT
 }
 
-func (g *Game) SubmitTurn(t Turn) (ok bool, err string) {
+func (g *Game) SubmitTurn(t Turn) (ok bool, err string, hits int) {
   result := g.executeTurn(t)
 
   if result.Ok {
     g.endTurn()
-    return true, ""
+    return true, "", result.Hits
   } else {
-    return false, result.Error
+    return false, result.Error, 0
   }
+}
+
+func (g *Game) SubmitPlacementTurn(playerID string, x, y, size int, horizontal bool) (bool, string) {
+  player := Player{Identifier: playerID}
+  loc := Coord{x: x, y: y}
+  placement := Placement{loc: loc, size: size, horizontal: horizontal}
+
+  ok, err, _ := g.SubmitTurn(Turn{Player: player, TurnType: PLACEMENT_TURN, Placement: placement})
+  return ok, err
+}
+
+func (g *Game) SubmitSalvoTurn(playerID string, locs []Coord) (bool, string, int) {
+  player := Player{Identifier: playerID}
+  salvo := Salvo{Locs: locs}
+
+  ok, err, hits := g.SubmitTurn(Turn{Player: player, TurnType: SALVO_TURN, Salvo: salvo})
+  return ok, err, hits
 }
 
 func (g *Game) ShotsPlayerCanFire(p Player) (shots int) {
@@ -376,4 +397,8 @@ func (g *Game) ShotsPlayerCanFire(p Player) (shots int) {
   }
 
   return
+}
+
+func NewCoord(x, y int) Coord {
+  return Coord{x: x, y: y}
 }

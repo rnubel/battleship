@@ -119,7 +119,7 @@ func TestPlacement(t *testing.T) {
   placement := Placement{loc: Coord{x: 0, y: 0}, size: 4, horizontal: true}
   turn := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
 
-  ok, err := g.SubmitTurn(turn)
+  ok, err, _ := g.SubmitTurn(turn)
 
   if !ok || err != "" {
     t.Error("Result was not as expected")
@@ -132,7 +132,7 @@ func TestPlacement(t *testing.T) {
   placement = Placement{loc: Coord{x: 4, y: 4}, size: 3, horizontal: true}
   turn = Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
 
-  ok, err = g.SubmitTurn(turn)
+  ok, err, _ = g.SubmitTurn(turn)
 
   if !ok || err != "" {
     t.Error("Player 1 was not able to place twice in a row during the placement phase")
@@ -142,7 +142,7 @@ func TestPlacement(t *testing.T) {
 func TestPlacementLimits(t *testing.T) {
   p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
   g := CreateGame(10, 10, p1, p2)
-  g.ShipAllocation = []int{1}
+  g.ShipAllocation = []int{1,2}
   g.Start()
 
   loc := Coord{x: 0, y: 0}
@@ -169,6 +169,15 @@ func TestPlacementLimits(t *testing.T) {
 
   if result.Ok || result.Error != "cannot_place_ship_of_that_size" {
     t.Error("Duplicate placement was not rejected")
+  }
+
+  placement = Placement{loc: loc, size: 2, horizontal: true}
+  turn = Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+
+  result = g.executeTurn(turn)
+
+  if result.Ok || result.Error != "collides_with_other_ship" {
+    t.Error("Overlapping placement was not rejected")
   }
 }
 
@@ -236,7 +245,7 @@ func TestSalvos(t *testing.T) {
 
   c := Coord{x:0,y:0}
   turn3 := Turn{Player: p1, TurnType: SALVO_TURN, Salvo: Salvo{Locs: []Coord{c, c, c, c, c, c, c, c, c, c, c, c, c, c, c, c}}}
-  ok, err := g.SubmitTurn(turn3)
+  ok, err, _ := g.SubmitTurn(turn3)
 
   if ok || err != "too_many_shots__max_is_11" {
     t.Errorf("The correct error was not raised (instead, we got \"%s\") when a player tried to fire too many shots", err)
