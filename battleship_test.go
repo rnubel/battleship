@@ -116,18 +116,26 @@ func TestPlacement(t *testing.T) {
     t.Error("Game is not in the PLACEMENT phase")
   }
 
-  loc := Coord{x: 0, y: 0}
-  placement := Placement{loc: loc, size: 4, horizontal: true}
+  placement := Placement{loc: Coord{x: 0, y: 0}, size: 4, horizontal: true}
   turn := Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
 
-  result := g.executeTurn(turn)
+  ok, err := g.SubmitTurn(turn)
 
-  if !result.Ok || result.Error != "" {
+  if !ok || err != "" {
     t.Error("Result was not as expected")
   }
 
   if len(g.Board1.ships) != 1 {
     t.Error("Turn did not actually place a ship")
+  }
+
+  placement = Placement{loc: Coord{x: 4, y: 4}, size: 3, horizontal: true}
+  turn = Turn{Player: p1, TurnType: PLACEMENT_TURN, Placement: placement}
+
+  ok, err = g.SubmitTurn(turn)
+
+  if !ok || err != "" {
+    t.Error("Player 1 was not able to place twice in a row during the placement phase")
   }
 }
 

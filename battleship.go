@@ -188,10 +188,6 @@ func (g *Game) boardsForPlayer(p Player) (myBoard, theirBoard *Board) {
 }
 
 func (g *Game) executeTurn(t Turn) (r Result) {
-  if t.Player != g.CurrentPlayer {
-    return Result{Ok: false, Error: "not_your_turn"}
-  }
-
   myBoard, theirBoard := g.boardsForPlayer(t.Player)
 
   switch t.TurnType {
@@ -215,6 +211,10 @@ func (g *Game) executeTurn(t Turn) (r Result) {
   case SALVO_TURN:
     if g.Phase != BATTLE {
       return Result{Ok: false, Error: "not_battle_phase"}
+    }
+
+    if t.Player != g.CurrentPlayer {
+      return Result{Ok: false, Error: "not_your_turn"}
     }
 
     if len(t.Salvo.Locs) > g.ShotsPlayerCanFire(t.Player) {
