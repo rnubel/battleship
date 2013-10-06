@@ -35,6 +35,7 @@ const (
 
 type Player struct {
   Identifier string
+  Name       string
 }
 
 type Placement struct {
@@ -96,6 +97,9 @@ func (s *Ship) Size() int {
 func (s *Ship) RecordShot(x, y int) bool {
   for i := range(s.parts) {
     if s.parts[i].loc.x == x && s.parts[i].loc.y == y {
+      if s.parts[i].isHit {
+        return false // already hit
+      }
       s.parts[i].isHit = true
       s.isDead = s.checkIfDestroyed()
       return true
@@ -176,7 +180,7 @@ func (g *Game) endTurn() {
 }
 
 func (g *Game) boardsForPlayer(p Player) (myBoard, theirBoard *Board) {
-  if p == g.Player1 {
+  if p.Identifier == g.Player1.Identifier {
     myBoard     = g.Board1
     theirBoard  = g.Board2
   } else {
@@ -213,7 +217,7 @@ func (g *Game) executeTurn(t Turn) (r Result) {
       return Result{Ok: false, Error: "not_battle_phase"}
     }
 
-    if t.Player != g.CurrentPlayer {
+    if t.Player.Identifier != g.CurrentPlayer.Identifier {
       return Result{Ok: false, Error: "not_your_turn"}
     }
 
@@ -393,7 +397,9 @@ func (g *Game) ShotsPlayerCanFire(p Player) (shots int) {
   myBoard, _ := g.boardsForPlayer(p)
 
   for i := range(myBoard.ships) {
-    shots += g.SalvoAllocation[myBoard.ships[i].Size()]
+    if !myBoard.ships[i].isDead {
+      shots += g.SalvoAllocation[myBoard.ships[i].Size()]
+    }
   }
 
   return

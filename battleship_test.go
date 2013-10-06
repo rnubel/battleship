@@ -209,6 +209,33 @@ func TestPhaseTransitions(t *testing.T) {
   }
 }
 
+func TestSalvoHits(t *testing.T) {
+  p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
+  g := CreateGame(10, 10, p1, p2)
+  g.ShipAllocation = []int{1,2,3,4,5}
+  g.SalvoAllocation = map[int]int{1:1, 2:2, 3:3, 4:10, 5:50}
+  g.Start()
+
+  g.SubmitPlacementTurn(p1.Identifier, 0, 0, 4, true)
+  g.SubmitPlacementTurn(p2.Identifier, 0, 0, 4, true)
+
+  g.Phase = BATTLE
+  g.CurrentPlayer = p2
+
+  c := Coord{x: 0, y: 0}
+  _, _, hits := g.SubmitSalvoTurn(p2.Identifier, []Coord{ c })
+  if hits != 1 {
+    t.Error("Valid hit was not counted.")
+  }
+
+
+  g.CurrentPlayer = p2
+  _, _, hits = g.SubmitSalvoTurn(p2.Identifier, []Coord{ c })
+  if hits != 0 {
+    t.Error("Duplicate hit was incorrectly counted.")
+  }
+}
+
 func TestSalvos(t *testing.T) {
   p1, p2 := Player{Identifier: "p1"}, Player{Identifier: "p2"}
   g := CreateGame(10, 10, p1, p2)
