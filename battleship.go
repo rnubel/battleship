@@ -78,6 +78,7 @@ type Game struct {
   Phase           GamePhase
   CurrentPlayer   Player
   Turns           []Turn
+  Winner          Player
 }
 
 func (s *Ship) covers(x, y int) bool {
@@ -176,6 +177,11 @@ func (g *Game) endTurn() {
     g.Phase = BATTLE
   } else if g.Phase == BATTLE && (g.Board1.IsLost() || g.Board2.IsLost()) {
     g.Phase = FINISHED
+    if g.Board1.IsLost() {
+      g.Winner = g.Player2
+    } else {
+      g.Winner = g.Player1
+    }
   }
 }
 
@@ -363,6 +369,10 @@ func (b *Board) IsLost() (lost bool) {
 func (g *Game) Start() {
   g.CurrentPlayer = g.Player1
   g.Phase = PLACEMENT
+}
+
+func (g *Game) IsOver() bool {
+  return g.Phase == FINISHED
 }
 
 func (g *Game) SubmitTurn(t Turn) (ok bool, err string, hits int) {
